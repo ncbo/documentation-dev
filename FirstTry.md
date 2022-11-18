@@ -2,11 +2,28 @@
 
 The first edition of this guide assumes that one is running Linux and that the IDE of choice is RubyMine.  As more than one person edits this document will become more generic and where it is known it will be indicated that a given solution is RubyMine or Linux specific.I also tend to favour running the Infrastructure in docker to avoid lengthy installs to seeup a developement environment.
 
+## Running stuff
+
+In order to expect anything to work one needs to have the infrastructure running.  This can be quickly provided by docker but some of out developers have it running on their development machines.  The docker solution will be described later in this note ([infrastructure through docker](#docker)) and the install option may be later described by other developers.
+
+Tests for a project are often run as rake tasks:
+```
+		bundler exex rake test
+```
+The ncbo project has a bunch of other useful rake tasks that we will find documentatioin for later.
+
+The ontologies rest services are run via rackup from the ontologies_api project:
+```
+		bundler exec rackup
+```
+The difference betweeen rackup and rake is that rackup is optimized for web services.  Each service is implemented as a      `call` interface call where call takes one argument. I am not yet sure where rackup is configured.
+
+
 ## Rbenv and versions of Ruby
 
 Unfortunately, one cannot simply install the latest version of ruby and expect that things would work.  One needs to choose the appropriate version of ruby.  Ruby is too essential to the development to see how to run it only in docker.  Thus it is useful to have a tool that allows one to select and use a specific version of ruby, possibly on a project specific basis.  We often use rbenv for this though there are other tools that are useful (and possibly more secure) for this purpose. A discussion of the installation and use of rbenv can be found [here](https://github.com/rbenv/rbenv/blob/master/README.md).
 
-## Running from the command line with docker
+## <a name="docker"></a>Running from the command line with docker
 
 There are many docker-compoee files that create a running infrastructure.  I use the one in the bioportal-config project (which for this purpose  is unfortunately private).  This docker image set provides
 +	solr
