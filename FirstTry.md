@@ -6,17 +6,83 @@ The first edition of this guide assumes that one is running Linux and that the I
 
 In order to expect anything to work one needs to have the infrastructure running.  This can be quickly provided by docker but some of out developers have it running on their development machines.  The docker solution will be described later in this note ([infrastructure through docker](#docker)) and the install option may be later described by other developers.
 
+### Tests
+
 Tests for a project are often run as rake tasks:
 ```
 		bundler exex rake test
 ```
 The ncbo project has a bunch of other useful rake tasks that we will find documentatioin for later.
 
+### Rest API
+
 The ontologies rest services are run via rackup from the ontologies_api project:
 ```
 		bundler exec rackup
 ```
 The difference betweeen rackup and rake is that rackup is optimized for web services.  Each service is implemented as a      `call` interface call where call takes one argument. I am not yet sure where rackup is configured.
+
+#### Case Study: Missing config file
+
+I saw the error:
+```
+bundler: failed to load command: rackup (/home/tredmond/.rbenv/versions/2.7.6/bin/rackup)                                                                              
+Traceback (most recent call last):
+            ...
+         4: from /home/tredmond/.rbenv/versions/2.7.6/lib/ruby/gems/2.7.0/gems/rack-1.6.13/lib/rack/builder.rb:55:in `instance_eval'                                   
+         3: from /home/tredmond/BioPortal/projects/ontologies_api/config.ru:1:in `block in <main>'                                                                     
+         2: from /home/tredmond/BioPortal/projects/ontologies_api/config.ru:1:in `require'                                                                             
+         1: from /home/tredmond/BioPortal/projects/ontologies_api/app.rb:77:in `<top (required)>'
+/home/tredmond/BioPortal/projects/ontologies_api/app.rb:77:in `require_relative': cannot load such file -- /home/tredmond/BioPortal/projects/ontologies_api/config/environments/development.rb (LoadError) 
+```
+This error is what it looks like: a missing file which happens to be a config file.  In that directory there is a file called `config.rb.sample` which can be used as a configuration file, development.rb.  One of the important things that this file does is to specify where the servers are including port numbers.
+
+
+### Main User Interface
+
+I don't quite have it working yet but I also know the command to start the rails user web user interface.  To do this start the ontologies api (the rackup command) and then run
+```
+rails s
+```
+There is a bit more to this as rails needs to be configured (including setting up a mariadb or mysql database) and there is an exception that occues when adding myself as a user.  
+
+#### Case Study: MySql problems
+
+Unlike the rest API, the ruby on rails application uses mysql which brings its own problems.  When I first do a `bundle install` I get the error when making the mysql2 gem:
+```
+*** extconf.rb failed ***                                                                                                                                                      
+Could not create Makefile due to some reason, probably lack of necessary libraries and/or headers.  Check the mkmf.log file for more details.  You may need configuration options. 
+```
+The Makefile is generally created by autoconf which checks if certain libraries are present. So the solution to this problem is to add the C/C++ libraries on which this compile depends which in Linux using mariadb would be done with the command:
+```
+sudo dnf install mariadb-connector-c mariadb-connector-c-devel
+```
+Then 
+```
+gem install mysql2
+```
+and 
+```
+bundle install
+```
+should work.
+
+#### Setting the Mariadb root password
+
+
+After installing mariadb with the command,
+```
+ dnf install mariadb-server
+```
+it is not clear what the root password is or how to login as root (in order to set such password). Fortunately the command,
+```
+sudo mysql -u root
+```
+works. Then one can set the root password with the command
+```
+set password for 'root'@'localhost' = password('mypass');
+```
+can be used to set the root password. One must then set database.yml (there is a sample file) in the config directory to correspond.
 
 
 ## Rbenv and versions of Ruby
@@ -105,3 +171,43 @@ bundler init
 bundle install
 ```
 The init command may be important - in spite of the fact that it generated an error suggesting that it did nothing - becuase things did not seem to work without it,
+
+
+### Case Study: Bundler version problems
+
+I recently saw the same exception that had bothered me so much before:
+```
+/bin/bash -c "env RBENV_VERSION=2.7.0 /home/tredmond/.rbenv/libexec/rbenv exec ruby /home/tredmond/.rbenv/versions/2.7.0/bin/rake default TEST=test/test_chunks_write.rb"
+Warning: you should require 'minitest/autorun' instead.
+Warning: or add 'gem "minitest"' before 'require "minitest/autorun"'
+From:
+  /home/tredmond/BioPortal/projects/goo/test/test_case.rb:19:in `<top (required)>'
+  /home/tredmond/BioPortal/projects/goo/test/test_chunks_write.rb:1:in `require_relative'
+  /home/tredmond/BioPortal/projects/goo/test/test_chunks_write.rb:1:in `<top (required)>'
+  /home/tredmond/.rbenv/versions/2.7.0/lib/ruby/gems/2.7.0/gems/rake-13.0.6/lib/rake/rake_test_loader.rb:21:in `block in <main>'
+  /home/tredmond/.rbenv/versions/2.7.0/lib/ruby/gems/2.7.0/gems/rake-13.0.6/lib/rake/rake_test_loader.rb:6:in `select'
+  /home/tredmond/.rbenv/versions/2.7.0/lib/ruby/gems/2.7.0/gems/rake-13.0.6/lib/rake/rake_test_loader.rb:6:in `<main>'
+MiniTest::Unit.autorun is now Minitest.autorun. From /home/tredmond/BioPortal/projects/goo/test/test_case.rb:20:in `<top (required)>'
+Traceback (most recent call last):
+	11: from /home/tredmond/.rbenv/versions/2.7.0/lib/ruby/gems/2.7.0/gems/rake-13.0.6/lib/rake/rake_test_loader.rb:6:in `<main>'
+	10: from /home/tredmond/.rbenv/versions/2.7.0/lib/ruby/gems/2.7.0/gems/rake-13.0.6/lib/rake/rake_test_loader.rb:6:in `select'
+	 9: from /home/tredmond/.rbenv/versions/2.7.0/lib/ruby/gems/2.7.0/gems/rake-13.0.6/lib/rake/rake_test_loader.rb:21:in `block in <main>'
+	 8: from /home/tredmond/.rbenv/versions/2.7.0/lib/ruby/2.7.0/rubygems/core_ext/kernel_require.rb:92:in `require'
+	 7: from /home/tredmond/.rbenv/versions/2.7.0/lib/ruby/2.7.0/rubygems/core_ext/kernel_require.rb:92:in `require'
+	 6: from /home/tredmond/BioPortal/projects/goo/test/test_chunks_write.rb:1:in `<top (required)>'
+	 5: from /home/tredmond/BioPortal/projects/goo/test/test_chunks_write.rb:1:in `require_relative'
+	 4: from /home/tredmond/BioPortal/projects/goo/test/test_case.rb:22:in `<top (required)>'
+	 3: from /home/tredmond/BioPortal/projects/goo/test/test_case.rb:22:in `require_relative'
+	 2: from /home/tredmond/BioPortal/projects/goo/lib/goo.rb:4:in `<top (required)>'
+	 1: from /home/tredmond/.rbenv/versions/2.7.0/lib/ruby/2.7.0/rubygems/core_ext/kernel_require.rb:92:in `require'
+/home/tredmond/.rbenv/versions/2.7.0/lib/ruby/2.7.0/rubygems/core_ext/kernel_require.rb:92:in `require': cannot load such file -- sparql/client (LoadError)
+rake aborted!
+Command failed with status (1)
+
+Tasks: TOP => default => test
+(See full trace by running task with --trace)
+
+Process finished with exit code 1
+```
+I did several iterations of looking at the bundler version in settings (I eyentually managed to set it there) and executing bundle initialization commands on the ruby and machine command  line to no avail. A new version of the bundler had become available. Then I realized that I had removed goo and restored it with git clone.  So I restarted RubyMine (twice - the first one did not take somehow) and all became well.  I was left not totally understanding what had happened (why twice?).
+
