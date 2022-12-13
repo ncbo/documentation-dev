@@ -84,6 +84,15 @@ set password for 'root'@'localhost' = password('mypass');
 ```
 can be used to set the root password. One must then set database.yml (there is a sample file) in the config directory to correspond.
 
+You need to install nodejs to defeat the error `Could not find a JavaScript runtime`:
+```
+sudo dnf install nodejs
+```
+After a bit of work (there are two sample config files) you can run the command
+```
+bundler exec rake db:create
+```
+to create the databases `bioportal_ui_test` and `bioportal_ui_dev`.  (I did not report this work here because I had to modify some files so they would compile which I found suspicious.)
 
 ## Rbenv and versions of Ruby
 
@@ -173,7 +182,7 @@ bundle install
 The init command may be important - in spite of the fact that it generated an error suggesting that it did nothing - becuase things did not seem to work without it,
 
 
-### Case Study: Bundler version problems
+#### Case Study: Bundler version problems
 
 I recently saw the same exception that had bothered me so much before:
 ```
