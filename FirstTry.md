@@ -4,7 +4,30 @@ The first edition of this guide assumes that one is running Linux and that the I
 
 ## Running stuff
 
-In order to expect anything to work one needs to have the infrastructure running.  This can be quickly provided by docker but some of out developers have it running on their development machines.  The docker solution will be described later in this note ([infrastructure through docker](#docker)) and the install option may be later described by other developers.
+In order to expect anything to work one needs to have the infrastructure running.  This can be quickly provided by docker but some of out developers have it running on their development machines.  The docker solution will be described later in this note ([infrastructure through docker](#docker)) and the install to host option may be later described by other developers.
+
+
+### Rbenv and versions of Ruby
+
+Unfortunately, one cannot simply install the latest version of ruby and expect that things would work.  One needs to choose the appropriate version of ruby.  Ruby is too essential to the development to see how to run it only in docker.  Thus it is useful to have a tool that allows one to select and use a specific version of ruby, possibly on a project specific basis.  We often use rbenv for this though there are other tools that are useful (and possibly more secure) for this purpose. A discussion of the installation and use of rbenv can be found [here](https://github.com/rbenv/rbenv/blob/master/README.md).
+
+### <a name="docker"></a>Running the infrastructure with docker
+
+The motivation behind this approach for running things under docker is that it means that the developer has an "instant" infrastructure rather than having to install and configure it himself, a costly process. Docker will also hide the configuration of the host machine. Also, installing and configuring the infrastructure on a Mac will proceed slightly differently than it would on a Fedora linux machine which will proceed slightly differently on Ubuntu linux. With docker, the configuration and installation only needs to be done once, by a devops person, on a single virtual machine.  This arrangement allows the devops person to hide the details of the infrastructure and its differing arrangement on differing (operating) systems and allows the developer to focus on development. 
+
+There are other ways of using docker.  For example the full development environment (including graphical tools such as rubymine) can be run within a docker container.  The developer could then use X or vnc to dlsplay graphical tools on the host machine.  Alternatively, a docker mount point, for example, could be used to replicate the developer's sources inside the development machine.  This would allow a developer to run his development environment on the host machine while accessing (debugging) running code remotely through the RubyMine docker interface,
+
+To run the infrastructure, go to the ontoportal_utilities project and type
+```
+cd docker
+docker-compose -f docker-compose.dev.yml up -d
+```
+Docker should then start four virtual machines operating solr, mgrep, redis anh 4store. The magic of docker networking makes them appear as though they were running on the host.
+
+## Running from the command line
+
+This part is not strictly speaking necessary; the goal is to get things running under rubymine.  But this is my style; I run things on the command line and under rubymine in parellel.
+
 
 ### Tests
 
@@ -94,154 +117,7 @@ bundler exec rake db:create
 ```
 to create the databases `bioportal_ui_test` and `bioportal_ui_dev`.  (I did not report this work here because I had to modify some files so they would compile which I found suspicious.)
 
-## Rbenv and versions of Ruby
 
-Unfortunately, one cannot simply install the latest version of ruby and expect that things would work.  One needs to choose the appropriate version of ruby.  Ruby is too essential to the development to see how to run it only in docker.  Thus it is useful to have a tool that allows one to select and use a specific version of ruby, possibly on a project specific basis.  We often use rbenv for this though there are other tools that are useful (and possibly more secure) for this purpose. A discussion of the installation and use of rbenv can be found [here](https://github.com/rbenv/rbenv/blob/master/README.md).
-
-## <a name="docker"></a>Running from the command line with docker
-
-The motivation behind this approach for running things under docker is that it means that the developer has an "instant" infrastructure rather than having to install and configure it himself, a costly process. Docker will also hide the configuration of the host machine. Installing and configuring the infrastructure on a Mac will proceed slightly differently than it would on a linux machine. With docker, the configuration and installation only needs to be done once, by a devops person, on a single machine.
-
-There are other ways of using docker# Debugging BioPortal
-
-The first edition of this guide assumes that one is running Linux and that the IDE of choice is RubyMine.  As more than one person edits this document will become more generic and where it is known it will be indicated that a given solution is RubyMine or Linux specific.I also tend to favour running the Infrastructure in docker to avoid lengthy installs to seeup a developement environment.
-
-## Running stuff
-
-In order to expect anything to work one needs to have the infrastructure running.  This can be quickly provided by docker but some of out developers have it running on their development machines.  The docker solution will be described later in this note ([infrastructure through docker](#docker)) and the install option may be later described by other developers.
-
-### Tests
-
-Tests for a project are often run as rake tasks:
-```
-		bundler exec rake test
-```
-Rake is a tool for writing ruby scripts that do something useful.  The ncbo project, in particular, has a bunch of useful rake tasks that we will find documentation for later. The rails project has a rake task, create:db, which installs a database. 
-
-### Rest API
-
-The ontologies rest services are run via rackup from the ontologies_api project:
-```
-		bundler exec rackup
-```
-The difference betweeen rackup and rake is that rackup is optimized for web services.  Each service is implemented as a      `call` interface call where call takes one argument. I am not yet sure where rackup is configured.
-
-#### Case Study: Missing config file
-
-I saw the error:
-```
-bundler: failed to load command: rackup (/home/tredmond/.rbenv/versions/2.7.6/bin/rackup)                                                                              
-Traceback (most recent call last):
-            ...
-         4: from /home/tredmond/.rbenv/versions/2.7.6/lib/ruby/gems/2.7.0/gems/rack-1.6.13/lib/rack/builder.rb:55:in `instance_eval'                                   
-         3: from /home/tredmond/BioPortal/projects/ontologies_api/config.ru:1:in `block in <main>'                                                                     
-         2: from /home/tredmond/BioPortal/projects/ontologies_api/config.ru:1:in `require'                                                                             
-         1: from /home/tredmond/BioPortal/projects/ontologies_api/app.rb:77:in `<top (required)>'
-/home/tredmond/BioPortal/projects/ontologies_api/app.rb:77:in `require_relative': cannot load such file -- /home/tredmond/BioPortal/projects/ontologies_api/config/environments/development.rb (LoadError) 
-```
-This error is what it looks like: a missing file which happens to be a config file.  In that directory there is a file called `config.rb.sample` which can be used as a configuration file, development.rb.  One of the important things that this file does is to specify where the servers are including port numbers.
-
-
-### Main User Interface
-
-I don't quite have it working yet but I also know the command to start the rails user web user interface.  To do this start the ontologies api (the rackup command) and then run
-```
-rails s
-```
-There is a bit more to this as rails needs to be configured (including setting up a mariadb or mysql database) and there is an exception that occues when adding myself as a user.  
-
-#### Case Study: MySql problems
-
-Unlike the rest API, the ruby on rails application uses mysql which brings its own problems.  When I first do a `bundle install` I get the error when making the mysql2 gem:
-```
-*** extconf.rb failed ***                                                                                                                                                      
-Could not create Makefile due to some reason, probably lack of necessary libraries and/or headers.  Check the mkmf.log file for more details.  You may need configuration options. 
-```
-The Makefile is generally created by autoconf which checks if certain libraries are present. So the solution to this problem is to add the C/C++ libraries on which this compile depends which in Linux using mariadb would be done with the command:
-```
-sudo dnf install mariadb-connector-c mariadb-connector-c-devel
-```
-Then 
-```
-gem install mysql2
-```
-and 
-```
-bundle install
-```
-should work.
-
-#### Setting the Mariadb root password
-
-
-After installing mariadb with the command,
-```
- dnf install mariadb-server
-```
-it is not clear what the root password is or how to login as root (in order to set such password). Fortunately the command,
-```
-sudo mysql -u root
-```
-works. Then one can set the root password with the command
-```
-set password for 'root'@'localhost' = password('mypass');
-```
-can be used to set the root password. One must then set database.yml (there is a sample file) in the config directory to correspond.
-
-You need to install nodejs to defeat the error `Could not find a JavaScript runtime`:
-```
-sudo dnf install nodejs
-```
-After a bit of work (there are two sample config files) you can run the commands:
-```
-bundler exec rake db:create
-bundler exec rake db:migrate
-```
-to create the databases `bioportal_ui_test` and `bioportal_ui_dev`.  (I did not report this work here because I had to modify some files so they would compile which I found suspicious.)
-
-## Rbenv and versions of Ruby
-
-Unfortunately, one cannot simply install the latest version of ruby and expect that things would work.  One needs to choose the appropriate version of ruby.  Ruby is too essential to the development to see how to run it only in docker.  Thus it is useful to have a tool that allows one to select and use a specific version of ruby, possibly on a project specific basis.  We often use rbenv for this though there are other tools that are useful (and possibly more secure) for this purpose. A discussion of the installation and use of rbenv can be found [here](https://github.com/rbenv/rbenv/blob/master/README.md).
-
-## <a name="docker"></a>Running from the command line with docker
-
-The motivation behind this approach for running things under docker is that it means that the developer has an "instant" infrastructure rather than having to install and configure it himself, a costly process. Docker will also hide the configuration of the host machine. Installing and configuring the infrastructure on a Mac will proceed slightly differently than it would on a linux machine. With docker, the configuration and installation only needs to be done once, by a devops person, on a single machine.
-
-There are other ways of using docker to support development, including operating the development tools inside a docker container or performing a remote debug to a docker container from the host machine (probably requires that the sources inside the docker container be synchronized with those used by the host development environment).  These approaches may be described in detail and motivated elsewhere.
-
-There are many docker-compose files that create a running infrastructure.  I use the one in the ontoportal_utilities project (which is planned on being moved).  This docker image set provides
-+	solr
-+	redis
-+	mgrep and
-+	4store
-
-which is sufficient to run to run all the ReST services of BioPortal.
-
-To run this version of docker, go to the docker directory in the ontoportal_utilities project:
-```
-cd ontoportal_utilities/docker
-```
-and execute the command:
-```
-docker-compose -f docker-compose.dev.yml up -d
-```
-After this command `docker ps` shows
-```
-[tredmond@Titan docker]$ docker ps 
-CONTAINER ID   IMAGE                       COMMAND                  CREATED             STATUS             PORTS                                                 NAMES
-f16e39768cdf   ontoportal/mgrep-ncbo:0.1   "/sbin/tini -- /bin/…"   About an hour ago   Up About an hour   0.0.0.0:55555->55555/tcp, :::55555->55555/tcp         docker_mgrep_1
-d1b49dfad9f3   bde2020/4store              "bash -c '4s-backend…"   About an hour ago   Up About an hour   6733/tcp, 0.0.0.0:9000->9000/tcp, :::9000->9000/tcp   docker_4store_1
-c249920ad2a3   ontoportal/solr-ut:0.1      "docker-entrypoint.s…"   About an hour ago   Up About an hour   0.0.0.0:8983->8983/tcp, :::8983->8983/tcp             docker_solr_1
-1e0a2e162ed0   redis                       "docker-entrypoint.s…"   About an hour ago   Up About an hour   0.0.0.0:6379->6379/tcp, :::6379->6379/tcp             docker_redis_1
-[tredmond@Titan docker]$ 
-```
-
-Now on the command line you should be able to run commands such as
-```
-		bundle install
-		bundler exec rake
-```
-to run the tests.
 
 ## Running from RubyMine
 
@@ -346,5 +222,7 @@ Tasks: TOP => default => test
 Process finished with exit code 1
 ```
 I did several iterations of looking at the bundler version in settings (I eyentually managed to set it there) and executing bundle initialization commands on the ruby and machine command  line to no avail. A new version of the bundler # Debugging BioPortal
+
+
 
 
