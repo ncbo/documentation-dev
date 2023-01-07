@@ -26,7 +26,7 @@ Docker should then start four virtual machines operating solr, mgrep, redis anh 
 
 ## Running from the command line
 
-This part is not strictly speaking necessary; the goal is to get things running under rubymine.  But this is my style; I run things on the command line and under rubymine in parellel.
+This part is not strictly speaking necessary; the goal is to get things running under rubymine.  But this is my style; I run things on the command line and under rubymine in parallel. As prerequisites for both the command line and for rubymine, write configuration files (generally based on samples), have the infrastructure up and run `bundle install` before the following commands.
 
 
 ### Tests
@@ -63,7 +63,15 @@ This error is what it looks like: a missing file which happens to be a config fi
 
 ### Main User Interface
 
-I don't quite have it working yet but I also know the command to start the rails user web user interface.  To do this start the ontologies api (the rackup command) and then run
+I don't quite have it working yet but I do know some potentially useful things.
+
+The rails application (the server side of the main BioPotal web-based user interface) has some additoinal prerequisites over the prerequisites of the other REST api projects. The database needs to be installed and configured.  Linux users can use mariadb which can be installed with, for example on Fedora systems, with `dnf`. Then to create and update the databases, bioportal_ui_dev and bioportal_ui_test, execute the commands
+``` 
+   bundler exec rake db:create
+   bundler exec rake db:migrate
+```
+
+ the command to start the rails user web user interface.  To do this start the ontologies api (the rackup command) and then run
 ```
 rails s
 ```
@@ -111,13 +119,16 @@ You need to install nodejs to defeat the error `Could not find a JavaScript runt
 ```
 sudo dnf install nodejs
 ```
-After a bit of work (there are two sample config files) you can run the command
-```
-bundler exec rake db:create
-```
-to create the databases `bioportal_ui_test` and `bioportal_ui_dev`.  (I did not report this work here because I had to modify some files so they would compile which I found suspicious.)
+#### Solving Helper Problems
 
+Sometimes there are difficulties running the helper programs. Often it is not the helpers themselves that are the real cause. The helper code is known for masking exceptions.  Unfortunately I do not have an exception to show here; once I fixed the problem I did not remember how to replicate it. However I do remember the fix:
+1. remove all the helpers from their directory.
+2. rerun the app to see the real exception.
+3. fix the real exception.
+4. restore all the helpers with `git restore`.
+5. rerun the app and hopefully watch it work correctly.
 
+In my case, the exception was caused by an ExceptionNotifiable rails plugin, that was erroneously configured by the given configuration file and which was not installed.
 
 ## Running from RubyMine
 
@@ -182,10 +193,12 @@ gem install bundler
 bundler init
 bundle install
 ```
-The init command may be important - in spite of the fact that it generated an error suggesting that it did nothing - becuase things did not seem to work without it,
+The init command may be important - in spite of the fact that it generated an error suggesting that it did nothing - becuase things did not seem to work without it,  
+
+But the bottom line is that I am not sure of anything except that now things work.
 
 
-#### Case Study: Bundler version problems
+### Case Study: Bundler version problems
 
 I recently saw the same exception that had bothered me so much before:
 ```
